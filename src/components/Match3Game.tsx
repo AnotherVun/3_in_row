@@ -37,6 +37,8 @@ const Match3Game: React.FC = () => {
   const [highlightedCells, setHighlightedCells] = useState<number[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
   const [fallDistances, setFallDistances] = useState<Record<number, number>>({});
+  const [swappingCells, setSwappingCells] = useState<number[]>([]);
+  const [swapDirections, setSwapDirections] = useState<Record<number, string>>({});
 
   // Функция для перемешивания доски
   const shuffleBoard = () => {
@@ -50,7 +52,7 @@ const Match3Game: React.FC = () => {
     const newBoard = createInitialBoard(rows, cols);
     setBoard(newBoard);
 
-    // Добавляем все ячейки в новые для анимации появления
+    // Добавляем все ячейки в новые для анимации
     const allCells = Array.from({ length: rows * cols }, (_, i) => i);
     setNewCells(allCells);
 
@@ -77,16 +79,144 @@ const Match3Game: React.FC = () => {
     );
   };
 
-  // Функция для обмена фруктов местами
-  const swapFruits = (index1: number, index2: number) => {
-    const newBoard = [...board];
-    const temp = newBoard[index1];
-    newBoard[index1] = newBoard[index2];
-    newBoard[index2] = temp;
-    setBoard(newBoard);
+  // Добавим новую функцию для проверки возможных совпадений
+  const findMatches = (currentBoard: string[]) => {
+    const matched: number[] = [];
 
-    // После обмена проверяем совпадения
-    checkMatches(newBoard);
+    // Проверка горизонтальных совпадений
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols - 2; c++) {
+        const index = r * cols + c;
+        const fruit = currentBoard[index];
+
+        if (fruit !== null &&
+            fruit === currentBoard[index + 1] &&
+            fruit === currentBoard[index + 2]) {
+          matched.push(index, index + 1, index + 2);
+
+          if (c < cols - 3 && fruit === currentBoard[index + 3]) {
+            matched.push(index + 3);
+            if (c < cols - 4 && fruit === currentBoard[index + 4]) {
+              matched.push(index + 4);
+            }
+          }
+        }
+      }
+    }
+
+    // Проверка вертикальных совпадений
+    for (let c = 0; c < cols; c++) {
+      for (let r = 0; r < rows - 2; r++) {
+        const index = r * cols + c;
+        const fruit = currentBoard[index];
+
+        if (fruit !== null &&
+            fruit === currentBoard[index + cols] &&
+            fruit === currentBoard[index + cols * 2]) {
+          matched.push(index, index + cols, index + cols * 2);
+
+          if (r < rows - 3 && fruit === currentBoard[index + cols * 3]) {
+            matched.push(index + cols * 3);
+            if (r < rows - 4 && fruit === currentBoard[index + cols * 4]) {
+              matched.push(index + cols * 4);
+            }
+          }
+        }
+      }
+    }
+
+    return [...new Set(matched)];
+  };
+
+  // Добавим функцию для проверки возможности хода
+  const isValidSwap = (index1: number, index2: number) => {
+    // Создаем копию доски для проверки
+    const testBoard = [...board];
+
+    // Меняем фрукты местами
+    const temp = testBoard[index1];
+    testBoard[index1] = testBoard[index2];
+    testBoard[index2] = temp;
+
+    // Проверяем, появились ли совпадения после обмена
+    const matches = findMatches(testBoard);
+
+    return matches.length > 0;
+  };
+
+  // Модифицируем функцию swapFruits
+  const swapFruits = (index1: number, index2: number) => {
+    // Проверяем, приведет ли обмен к совпадению
+    if (!isValidSwap(index1, index2)) {
+      const row1 = Math.floor(index1 / cols);
+      const col1 = index1 % cols;
+      const row2 = Math.floor(index2 / cols);
+      const col2 = index2 % cols;
+
+      let direction1, direction2;
+
+      if (row1 === row2) {
+        direction1 = col1 < col2 ? 'right' : 'left';
+        direction2 = col1 < col2 ? 'left' : 'right';
+      } else {
+        direction1 = row1 < row2 ? 'down' : 'up';
+        direction2 = row1 < row2 ? 'up' : 'down';
+      }
+
+      // Добавляем префикс invalid_ для анимации отмены
+      setSwappingCells([index1, index2]);
+      setSwapDirections({
+        [index1]: `invalid_${direction1}`,
+        [index2]: `invalid_${direction2}`
+      });
+
+      // Уменьшаем время анимации для отмены
+      setTimeout(() => {
+        setSwappingCells([]);
+        setSwapDirections({});
+        setSelectedCell(null);
+        setSecondSelectedCell(null);
+      }, 800); // Увеличиваем время до 800мс для новой анимации
+
+      return;
+    }
+
+    // Если обмен валидный
+    const row1 = Math.floor(index1 / cols);
+    const col1 = index1 % cols;
+    const row2 = Math.floor(index2 / cols);
+    const col2 = index2 % cols;
+
+    let direction1, direction2;
+
+    if (row1 === row2) {
+      // Горизонтальный обмен
+      direction1 = col1 < col2 ? 'right' : 'left';
+      direction2 = col1 < col2 ? 'left' : 'right';
+    } else {
+      // Вертикальный обмен
+      direction1 = row1 < row2 ? 'down' : 'up';
+      direction2 = row1 < row2 ? 'up' : 'down';
+    }
+
+    setSwappingCells([index1, index2]);
+    setSwapDirections({
+      [index1]: direction1,
+      [index2]: direction2
+    });
+
+    setTimeout(() => {
+      const newBoard = [...board];
+      const temp = newBoard[index1];
+      newBoard[index1] = newBoard[index2];
+      newBoard[index2] = temp;
+
+      setBoard(newBoard);
+      setSwappingCells([]);
+      setSwapDirections({});
+
+      checkMatches(newBoard);
+    }, 400); // Уменьшаем время до 0.4 секунд для соответствия новой анимации
   };
 
   // Функция для проверки совпадений по горизонтали и вертикали
@@ -309,6 +439,8 @@ const Match3Game: React.FC = () => {
             isNew={newCells.includes(index)}
             isFalling={fallingCells.includes(index)}
             isHighlighted={highlightedCells.includes(index)}
+            isSwapping={swappingCells.includes(index)}
+            swapDirection={swapDirections[index] as 'left' | 'right' | 'up' | 'down'}
             fallDistance={fallDistances[index] || 1}
             onClick={() => handleCellClick(index)}
           />

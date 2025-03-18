@@ -10,6 +10,8 @@ interface CellProps {
   isNew?: boolean;
   isFalling?: boolean;
   isHighlighted?: boolean;
+  isSwapping?: boolean;
+  swapDirection?: 'left' | 'right' | 'up' | 'down' | 'invalid_left' | 'invalid_right' | 'invalid_up' | 'invalid_down';
   index: number;
   fallDistance?: number;
 }
@@ -23,6 +25,8 @@ const Cell: React.FC<CellProps> = ({
   isNew = false,
   isFalling = false,
   isHighlighted = false,
+  isSwapping = false,
+  swapDirection = 'right',
   index,
   fallDistance = 1
 }) => {
@@ -40,6 +44,109 @@ const Cell: React.FC<CellProps> = ({
     ease: "easeOut" as const
   };
 
+  // Обновляем функцию getSwapAnimation
+  const getSwapAnimation = () => {
+    const distance = 48; // размер ячейки
+    const halfDistance = distance / 2;
+
+    // Добавляем проверку на isInvalidSwap
+    const isInvalidSwap = swapDirection.startsWith('invalid_');
+    // Убираем префикс invalid_ из направления если он есть
+    const direction = isInvalidSwap ? swapDirection.replace('invalid_', '') : swapDirection;
+
+    const getInvalidAnimation = () => {
+      const shakeKeyframes = {
+        x: [0, -3, 3, -2, 2, -1, 1, 0], // более мелкая тряска
+        y: [0, 2, -2, 1, -1, 2, -2, 0], // добавляем вертикальную тряску
+        scale: [1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1], // увеличение во время тряски
+        rotate: [-2, 2, -2, 2, -1, 1, -1, 0] // небольшой поворот
+      };
+
+      switch (direction) {
+        case 'left': return {
+          initial: { x: 0, scale: 1 },
+          animate: {
+            x: [0, -24, -24, -24, -24, -24, -24, -24, 0], // движение до середины и обратно
+            ...shakeKeyframes
+          }
+        };
+        case 'right': return {
+          initial: { x: 0, scale: 1 },
+          animate: {
+            x: [0, 24, 24, 24, 24, 24, 24, 24, 0],
+            ...shakeKeyframes
+          }
+        };
+        case 'up': return {
+          initial: { y: 0, scale: 1 },
+          animate: {
+            y: [0, -24, -24, -24, -24, -24, -24, -24, 0],
+            ...shakeKeyframes
+          }
+        };
+        case 'down': return {
+          initial: { y: 0, scale: 1 },
+          animate: {
+            y: [0, 24, 24, 24, 24, 24, 24, 24, 0],
+            ...shakeKeyframes
+          }
+        };
+        default: return {
+          initial: { x: 0, y: 0, scale: 1 },
+          animate: { x: 0, y: 0, scale: 1 }
+        };
+      }
+    };
+
+    if (isInvalidSwap) {
+      return getInvalidAnimation();
+    }
+
+    // Обновляем анимацию валидного обмена
+    switch (direction) {
+      case 'left': return {
+        initial: { x: 0, y: 0, scale: 1, zIndex: 1 },
+        animate: {
+          x: [0, -24, -48],
+          y: [0, -24, 0],
+          scale: [1, 1.1, 1],
+          zIndex: [1, 2, 1]
+        }
+      };
+      case 'right': return {
+        initial: { x: 0, y: 0, scale: 1, zIndex: 1 },
+        animate: {
+          x: [0, 24, 48],
+          y: [0, -24, 0],
+          scale: [1, 1.1, 1],
+          zIndex: [1, 2, 1]
+        }
+      };
+      case 'up': return {
+        initial: { x: 0, y: 0, scale: 1, zIndex: 1 },
+        animate: {
+          y: [0, -24, -48],
+          x: [0, 12, 0],
+          scale: [1, 1.1, 1],
+          zIndex: [1, 2, 1]
+        }
+      };
+      case 'down': return {
+        initial: { x: 0, y: 0, scale: 1, zIndex: 1 },
+        animate: {
+          y: [0, 24, 48],
+          x: [0, -12, 0],
+          scale: [1, 1.1, 1],
+          zIndex: [1, 2, 1]
+        }
+      };
+      default: return {
+        initial: { x: 0, y: 0, scale: 1, rotate: 0, zIndex: 1 },
+        animate: { x: 0, y: 0, scale: 1, rotate: 0, zIndex: 1 }
+      };
+    }
+  };
+
   return (
     <div
       onClick={onClick}
@@ -47,7 +154,33 @@ const Cell: React.FC<CellProps> = ({
                  ${isHighlighted ? 'bg-purple-500' : bgColor}
                  shadow-md cursor-pointer relative`}
     >
-      {isFalling ? (
+      {isSwapping ? (
+        <motion.div
+          key={`swapping-${index}`}
+          className="text-2xl absolute"
+          style={{
+            fontSize: '24px',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transformOrigin: 'center'
+          }}
+          {...getSwapAnimation()}
+          transition={{
+            duration: swapDirection.startsWith('invalid_') ? 0.8 : 0.4,
+            times: swapDirection.startsWith('invalid_')
+              ? [0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1]
+              : [0, 0.5, 1],
+            ease: swapDirection.startsWith('invalid_')
+              ? "easeInOut"
+              : [0.25, 0.1, 0.25, 1]
+          }}
+        >
+          {fruit}
+        </motion.div>
+      ) : isFalling ? (
         <motion.div
           key={`falling-${index}`}
           className="text-2xl absolute"
@@ -88,13 +221,20 @@ const Cell: React.FC<CellProps> = ({
             height: '100%',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            opacity: 0
           }}
-          initial={{ top: '-120px' }}
-          animate={{ top: 0 }}
+          initial={{ top: '-120px', opacity: 0 }}
+          animate={{ top: 0, opacity: 1 }}
           transition={{
-            ...fallAnimationProps,
-            delay: 0.2 + (Math.floor(index / cols) * 0.05)
+            top: {
+              ...fallAnimationProps,
+              delay: 0.2 + (Math.floor(index / cols) * 0.05)
+            },
+            opacity: {
+              duration: 0.2,
+              delay: 0.3 + (Math.floor(index / cols) * 0.05)
+            }
           }}
         >
           {fruit}
