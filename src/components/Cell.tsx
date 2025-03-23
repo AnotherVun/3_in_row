@@ -3,17 +3,17 @@ import { motion } from 'framer-motion';
 
 interface CellProps {
   fruit: string;
-  onClick: () => void;
   bgColor: string;
-  isSelected?: boolean;
-  isMatched?: boolean;
-  isNew?: boolean;
-  isFalling?: boolean;
-  isHighlighted?: boolean;
-  isSwapping?: boolean;
-  swapDirection?: 'left' | 'right' | 'up' | 'down' | 'invalid_left' | 'invalid_right' | 'invalid_up' | 'invalid_down';
+  isSelected: boolean;
+  isMatched: boolean;
+  isNew: boolean;
+  isFalling: boolean;
+  isHighlighted: boolean;
+  isSwapping: boolean;
+  swapDirection?: string;
+  fallDistance: number;
+  onClick: () => void;
   index: number;
-  fallDistance?: number;
 }
 
 const Cell: React.FC<CellProps> = ({
@@ -47,7 +47,6 @@ const Cell: React.FC<CellProps> = ({
   // Обновляем функцию getSwapAnimation
   const getSwapAnimation = () => {
     const distance = 48; // размер ячейки
-    const halfDistance = distance / 2;
 
     // Добавляем проверку на isInvalidSwap
     const isInvalidSwap = swapDirection.startsWith('invalid_');
@@ -56,39 +55,41 @@ const Cell: React.FC<CellProps> = ({
 
     const getInvalidAnimation = () => {
       const shakeKeyframes = {
-        x: [0, -3, 3, -2, 2, -1, 1, 0], // более мелкая тряска
-        y: [0, 2, -2, 1, -1, 2, -2, 0], // добавляем вертикальную тряску
-        scale: [1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1], // увеличение во время тряски
-        rotate: [-2, 2, -2, 2, -1, 1, -1, 0] // небольшой поворот
+        scale: [1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1],
+        rotate: [-2, 2, -2, 2, -1, 1, -1, 0]
       };
 
       switch (direction) {
         case 'left': return {
           initial: { x: 0, scale: 1 },
           animate: {
-            x: [0, -24, -24, -24, -24, -24, -24, -24, 0], // движение до середины и обратно
-            ...shakeKeyframes
+            scale: shakeKeyframes.scale,
+            rotate: shakeKeyframes.rotate,
+            x: [0, -24, -24, -24, -24, -24, -24, -24, 0]
           }
         };
         case 'right': return {
           initial: { x: 0, scale: 1 },
           animate: {
-            x: [0, 24, 24, 24, 24, 24, 24, 24, 0],
-            ...shakeKeyframes
+            scale: shakeKeyframes.scale,
+            rotate: shakeKeyframes.rotate,
+            x: [0, 24, 24, 24, 24, 24, 24, 24, 0]
           }
         };
         case 'up': return {
           initial: { y: 0, scale: 1 },
           animate: {
-            y: [0, -24, -24, -24, -24, -24, -24, -24, 0],
-            ...shakeKeyframes
+            scale: shakeKeyframes.scale,
+            rotate: shakeKeyframes.rotate,
+            y: [0, -24, -24, -24, -24, -24, -24, -24, 0]
           }
         };
         case 'down': return {
           initial: { y: 0, scale: 1 },
           animate: {
-            y: [0, 24, 24, 24, 24, 24, 24, 24, 0],
-            ...shakeKeyframes
+            scale: shakeKeyframes.scale,
+            rotate: shakeKeyframes.rotate,
+            y: [0, 24, 24, 24, 24, 24, 24, 24, 0]
           }
         };
         default: return {
