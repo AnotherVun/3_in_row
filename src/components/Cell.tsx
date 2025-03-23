@@ -44,6 +44,8 @@ const Cell: React.FC<CellProps> = ({
     ease: "easeOut" as const
   };
 
+  //some
+
   // Обновляем функцию getSwapAnimation
   const getSwapAnimation = () => {
     // const distance = 48; // размер ячейки
