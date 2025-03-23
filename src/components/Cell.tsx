@@ -10,7 +10,7 @@ interface CellProps {
   isFalling: boolean;
   isHighlighted: boolean;
   isSwapping: boolean;
-  swapDirection?: string;
+  swapDirection?: "right" | "left" | "up" | "down";
   fallDistance: number;
   onClick: () => void;
   index: number;
@@ -46,7 +46,7 @@ const Cell: React.FC<CellProps> = ({
 
   // Обновляем функцию getSwapAnimation
   const getSwapAnimation = () => {
-    const distance = 48; // размер ячейки
+    // const distance = 48; // размер ячейки
 
     // Добавляем проверку на isInvalidSwap
     const isInvalidSwap = swapDirection.startsWith('invalid_');

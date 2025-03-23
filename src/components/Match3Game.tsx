@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Cell from './Cell';
 import ScoreDisplay from './ScoreDisplay';
 
-import dancePepa from '../assets/pepe-the-frog-pepe.gif';
-import drumPepa from '../assets/pepe-drum-peepo-drum.gif';
-
 interface Match3GameProps {
   onScoreUpdate: (score: number) => void;
 }
@@ -33,7 +30,7 @@ const Match3Game: React.FC<Match3GameProps> = ({ onScoreUpdate }) => {
   const [newCells, setNewCells] = useState<number[]>([]);
   const [fallingCells, setFallingCells] = useState<number[]>([]);
   const [highlightedCells, setHighlightedCells] = useState<number[]>([]);
-  const [isShuffling, setIsShuffling] = useState(false);
+  // const [isShuffling, setIsShuffling] = useState(false);
   const [fallDistances, setFallDistances] = useState<Record<number, number>>({});
   const [swappingCells, setSwappingCells] = useState<number[]>([]);
   const [swapDirections, setSwapDirections] = useState<Record<number, string>>({});
@@ -41,30 +38,30 @@ const Match3Game: React.FC<Match3GameProps> = ({ onScoreUpdate }) => {
   const [score, setScore] = useState(0);
 
   // Функция для перемешивания доски
-  const shuffleBoard = () => {
-    // Не перемешиваем, если уже идет анимация
-    if (matchedCells.length > 0 || highlightedCells.length > 0 || isShuffling) return;
+  // const shuffleBoard = () => {
+  //   // Не перемешиваем, если уже идет анимация
+  //   if (matchedCells.length > 0 || highlightedCells.length > 0 || isShuffling) return;
 
-    setIsShuffling(true);
-    setSelectedCell(null);
+  //   setIsShuffling(true);
+  //   setSelectedCell(null);
 
-    // Создаем новую доску с случайными фруктами
-    const newBoard = createInitialBoard();
-    setBoard(newBoard);
+  //   // Создаем новую доску без совпадений
+  //   const newBoard = createBoardWithoutMatches();
+  //   setBoard(newBoard);
 
-    // Добавляем все ячейки в новые для анимации
-    const allCells = Array.from({ length: rows * cols }, (_, i) => i);
-    setNewCells(allCells);
+  //   // Добавляем все ячейки в новые для анимации
+  //   const allCells = Array.from({ length: rows * cols }, (_, i) => i);
+  //   setNewCells(allCells);
 
-    // Сбрасываем статус новых фруктов через время
-    setTimeout(() => {
-      setNewCells([]);
-      setIsShuffling(false);
+  //   // Сбрасываем статус новых фруктов через время
+  //   setTimeout(() => {
+  //     setNewCells([]);
+  //     setIsShuffling(false);
 
-      // Проверяем совпадения в новой доске
-      checkMatches(newBoard);
-    }, 500);
-  };
+  //     // Проверяем совпадения в новой доске
+  //     checkMatches(newBoard);
+  //   }, 500);
+  // };
 
   // Функция проверки соседних ячеек
   const areAdjacent = (index1: number, index2: number) => {
@@ -116,13 +113,18 @@ const Match3Game: React.FC<Match3GameProps> = ({ onScoreUpdate }) => {
 
   // Добавим функцию для проверки возможности хода
   const isValidSwap = (index1: number, index2: number) => {
+    const row1 = Math.floor(index1 / cols);
+    const col1 = index1 % cols;
+    const row2 = Math.floor(index2 / cols);
+    const col2 = index2 % cols;
+
     // Создаем копию доски для проверки
     const testBoard = board.map(row => [...row]);
 
     // Меняем фрукты местами
-    const temp = testBoard[index1];
-    testBoard[index1] = testBoard[index2];
-    testBoard[index2] = temp;
+    const temp = testBoard[row1][col1];
+    testBoard[row1][col1] = testBoard[row2][col2];
+    testBoard[row2][col2] = temp;
 
     // Проверяем, появились ли совпадения после обмена
     const matches = findMatches(testBoard);
@@ -154,7 +156,7 @@ const Match3Game: React.FC<Match3GameProps> = ({ onScoreUpdate }) => {
     testBoard[row2][col2] = temp;
 
     // Проверяем, создает ли своп совпадение
-    if (!hasMatches(testBoard)) {
+    if (!isValidSwap(row1 * cols + col1, row2 * cols + col2)) {
       // Если своп не создает совпадение, показываем анимацию отмены
       setSwappingCells([index1, index2]);
       setSwapDirections({
@@ -399,6 +401,12 @@ const Match3Game: React.FC<Match3GameProps> = ({ onScoreUpdate }) => {
   return (
     <div className="p-4 bg-amber-100 rounded-lg shadow-lg">
       <ScoreDisplay score={score} />
+      {/* <button
+        onClick={shuffleBoard}
+        className="mb-4 px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600"
+      >
+        Перемешать
+      </button> */}
       <div className="grid grid-cols-8 gap-2">
         {board.map((row, i) =>
           row.map((fruit, j) => (
@@ -415,6 +423,7 @@ const Match3Game: React.FC<Match3GameProps> = ({ onScoreUpdate }) => {
               swapDirection={swapDirections[i * 8 + j] as 'left' | 'right' | 'up' | 'down'}
               fallDistance={fallDistances[i * 8 + j] || 1}
               onClick={() => handleCellClick(i * 8 + j)}
+              index={i * 8 + j}
             />
           ))
         )}

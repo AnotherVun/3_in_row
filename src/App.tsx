@@ -6,34 +6,14 @@ import djPepa from './assets/pepe-rave-rave-pepe.gif'
 const App: React.FC = () => {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [audio] = useState(new Audio(backgroundMusic));
-  const [score, setScore] = useState(0);
-  const [isMusicEnabled, setIsMusicEnabled] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [key, setKey] = useState(0);
 
-  const playMusic = () => {
-    if (isMusicEnabled) {
-      audio.loop = true;
-      audio.play();
-    }
-  };
-
-  const toggleMusic = () => {
-    setIsMusicEnabled(prev => !prev);
-  };
-
   useEffect(() => {
-    if (isMusicEnabled) {
-      audio.loop = true;
-      audio.play();
-    } else {
-      audio.pause();
-    }
-
+    audio.loop = true;
     return () => {
       audio.pause();
     };
-  }, [isMusicEnabled, audio]);
+  }, [audio]);
 
   const startGame = () => {
     if (!isGameStarted) {
@@ -44,7 +24,6 @@ const App: React.FC = () => {
     } else {
       setKey(prevKey => prevKey + 1);
     }
-    setScore(0);
   };
 
   return (
@@ -62,12 +41,13 @@ const App: React.FC = () => {
       ) : (
         <div className="text-center">
           <div className="mb-4 text-2xl font-bold text-amber-800 flex justify-center" >
-            <img src={djPepa} alt="" className='w-30 h-30' />
-            {/* Счет: {score} */}
+            <img src={djPepa} alt="DJ Pepa" className='w-30 h-30' />
           </div>
           <Match3Game
             key={key}
-            onScoreUpdate={setScore}
+            onScoreUpdate={(score) => {
+              console.log('Текущий счет:', score);
+            }}
           />
           <button
             onClick={startGame}
@@ -77,29 +57,6 @@ const App: React.FC = () => {
           </button>
         </div>
       )}
-      {/* <div className="relative">
-        <button
-          onClick={() => setIsMenuOpen(prev => !prev)}
-          className="mb-4 px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          Настройки
-        </button>
-        {isMenuOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg">
-            <div className="p-2">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={isMusicEnabled}
-                  onChange={toggleMusic}
-                  className="mr-2"
-                />
-                Включить музыку
-              </label>
-            </div>
-          </div>
-        )}
-      </div> */}
     </div>
   );
 };

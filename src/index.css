@@ -1,8 +1,6 @@
 @import "tailwindcss";
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* @import "tailwindcss/preflight"; */
+/* @tailwind utilities; */
 
 @keyframes bounce-y {
   0% { transform: translateY(0); }
